@@ -1,20 +1,34 @@
-// Controlador para el juego UNO
 package Controlador;
 
 import Modelo.*;
-import java.rmi.RemoteException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ControladorUNO {
-    public final Partida partida;
+    private final Partida partida;
+    private final List<VistaObserver> vistas; // Lista de observadores (vistas)
 
     public ControladorUNO(Partida partida) {
         this.partida = partida;
+        this.vistas = new ArrayList<>();
+    }
+
+    // Registra una vista como observador
+    public void registrarVista(VistaObserver vista) {
+        vistas.add(vista);
+    }
+
+    // Notifica a todas las vistas que hubo un cambio
+    private void notificarVistas() {
+        for (VistaObserver vista : vistas) {
+            vista.actualizar(); // Cada vista implementará cómo se actualiza
+        }
     }
 
     // Inicia una nueva partida
     public void iniciarPartida(List<String> nombresJugadores) {
         partida.iniciarPartida(nombresJugadores);
+        notificarVistas(); // Notificar que la partida fue iniciada
     }
 
     // Maneja la acción de jugar una carta
@@ -22,28 +36,38 @@ public class ControladorUNO {
         Jugador jugadorActual = partida.getJugadorActual();
         Carta carta = jugadorActual.getCartas().get(indiceCarta);
         partida.jugarCarta(carta);
+        notificarVistas(); // Notificar que se jugó una carta
     }
 
     // Pide al mazo una carta para el jugador actual
     public void robarCarta() {
         Jugador jugadorActual = partida.getJugadorActual();
-        jugadorActual.tomarCarta(partida.robarCartaDelMazo()); // no va al mazo sino a l partida
-        partida.pasarTurno(); //cambio para que al robar pase de turno
+        jugadorActual.tomarCarta(partida.robarCartaDelMazo());
+        partida.pasarTurno();
+        notificarVistas(); // Notificar que el turno cambió
     }
 
-    // Obtiene información del estado actual del juego
-    public String obtenerEstadoJuego() {
-        StringBuilder estado = new StringBuilder();
-        estado.append("Turno de: ").append(partida.getJugadorActual().getNombre()).append("\n");
-        estado.append("Cartas del jugador: ").append(partida.getJugadorActual().getCartas()).append("\n");
-        try {
-            estado.append("Última carta jugada: ").append(partida.getUltimaCartaJugadas()).append("\n");
-        } catch (IllegalStateException e) { // Captura IllegalStateException
-            estado.append("Aún no se han jugado cartas.\n"); // Mensaje alternativo
+    // Maneja el cambio de color cuando se juega una carta especial
+    public void manejarCambioDeColor(Color nuevoColor) {
+        if (nuevoColor == Color.SIN_COLOR) {
+            throw new IllegalArgumentException("El color no puede ser SIN_COLOR.");
         }
-        return estado.toString();
+        partida.cambiarColorActual(nuevoColor);
+        notificarVistas(); // Notificar que el color cambió
     }
 
+    // Métodos para obtener el estado del juego en un formato neutral
+    public Jugador obtenerJugadorActual() {
+        return partida.getJugadorActual();
+    }
+
+    public Carta obtenerUltimaCartaJugadas() {
+        return partida.getUltimaCartaJugadas();
+    }
+
+    public Color obtenerColorActual() {
+        return partida.getColorActual();
+    }
 
     public boolean isPartidaEnCurso() {
         return partida.isPartidaEnCurso();

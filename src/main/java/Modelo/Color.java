@@ -1,7 +1,7 @@
 package Modelo;
 
 // Enumerado para los colores de las cartas
-enum Color {
-    ROJO, AZUL, VERDE, AMARILLO;
+public enum Color {
+    ROJO, AZUL, VERDE, AMARILLO, SIN_COLOR;
 }
 

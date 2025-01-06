@@ -35,4 +35,14 @@ public class Jugador {
     public boolean puedeJugar(Carta carta) {
         return cartas.contains(carta);
     }
+
+    public boolean tieneCartaDelColor(Color colorActual) {
+        for (Carta carta : cartas) {
+            if (carta.getColor() == colorActual) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
