@@ -26,33 +26,27 @@ public class Partida extends Observable {
     }
 
     public void iniciarPartida(List<String> nombresJugadores) {
-
-        // Validar cantidad de jugadores
         if (nombresJugadores.size() < MIN_JUGADORES || nombresJugadores.size() > MAX_JUGADORES) {
             throw new IllegalArgumentException("El número de jugadores debe estar entre " + MIN_JUGADORES + " y " + MAX_JUGADORES + ".");
         }
+
         for (String nombre : nombresJugadores) {
             jugadores.add(new Jugador(nombre));
         }
+
         mazo.barajar();
         repartirCartasIniciales();
         partidaEnCurso = true;
 
-        // Establecer el color inicial basado en la primera carta jugada
         Carta primeraCarta = mazo.robarCarta();
-
-        //Verificar si la carta inicial es sin color  --->VER SI ESTA REGAL ES ASI
-        if (primeraCarta.getColor() == Color.SIN_COLOR) {
-            while (primeraCarta.getColor() == Color.SIN_COLOR) {
-                mazo.descartar(primeraCarta);
-                primeraCarta = mazo.robarCarta();
-            }
+        while (primeraCarta.getColor() == Color.SIN_COLOR) {
+            mazo.descartar(primeraCarta);
+            primeraCarta = mazo.robarCarta();
         }
         mazo.descartar(primeraCarta);
         this.colorActual = primeraCarta.getColor();
 
-        setChanged();
-        notifyObservers("La partida ha comenzado. Color inicial: " + colorActual);
+        notificarEvento(new Evento("INICIO_PARTIDA", colorActual));
     }
 
     private void repartirCartasIniciales() {
@@ -78,31 +72,18 @@ public class Partida extends Observable {
         jugadorActual.jugarCarta(carta);
         mazo.descartar(carta);
 
-        // Actualizar el color actual si es necesario
-//        if (carta.getValor().equals(Numero.CAMBIOCOLOR) || carta.getValor().equals(Numero.MASCUATRO)) {
-//            cambiarColorActual(Color.ROJO); // Este valor debería venir del jugador (ejemplo aquí)
-//        } else {
-//            colorActual = carta.getColor();
-//        }
-
-        // Notificar acción
-//        setChanged();
-//        notifyObservers("El jugador " + jugadorActual.getNombre() + " jugó: " + carta);
-
         // Manejar cartas especiales
         manejarCartaEspecial(carta);
 
-        // Verificar si ganó
         if (jugadorActual.getCartas().isEmpty()) {
-            finalizarPartida("El jugador " + jugadorActual.getNombre() + " ha ganado la partida!");
+            finalizarPartida(jugadorActual);
             return;
         }
-        // se actualiza el color actual
+
         if (carta.getColor() != Color.SIN_COLOR) {
             colorActual = carta.getColor();
         }
 
-        // Pasar turno
         pasarTurno();
     }
 
@@ -142,8 +123,9 @@ public class Partida extends Observable {
             jugadores.get(siguienteJugador).tomarCarta(mazo.robarCarta());
         }
 
-        setChanged();
-        notifyObservers("El jugador " + jugadores.get(siguienteJugador).getNombre() + " ha robado " + cantidad + " cartas");
+        //setChanged();
+        //notifyObservers("El jugador " + jugadores.get(siguienteJugador).getNombre() + " ha robado " + cantidad + " cartas");
+        notificarEvento(new Evento("ROBAR_CARTAS", jugadores.get(siguienteJugador)));
     }
 
     public void cambiarColorActual(Color nuevoColor) {
@@ -152,8 +134,7 @@ public class Partida extends Observable {
         }
         this.colorActual = nuevoColor;
 
-        setChanged();
-        notifyObservers("El color actual ha cambiado a: " + nuevoColor);
+        notificarEvento(new Evento("CAMBIO_COLOR", nuevoColor));
     }
 
     public void pasarTurno() {
@@ -161,14 +142,12 @@ public class Partida extends Observable {
                 (turnoActual + 1) % jugadores.size() :
                 (turnoActual - 1 + jugadores.size()) % jugadores.size();
 
-        setChanged();
-        notifyObservers("Es el turno de " + jugadores.get(turnoActual).getNombre());
+        notificarEvento(new Evento("CAMBIO_TURNO", jugadores.get(turnoActual)));
     }
 
-    private void finalizarPartida(String mensaje) {
+    private void finalizarPartida(Jugador jugadorGanador) {
         partidaEnCurso = false;
-        setChanged();
-        notifyObservers(mensaje);
+        notificarEvento(new Evento("FIN_PARTIDA", jugadorGanador));
     }
 
     public boolean isPartidaEnCurso() {
@@ -193,5 +172,10 @@ public class Partida extends Observable {
 
     public Carta getUltimaCartaJugadas() {
         return mazo.getUltimaCartaJugadas();
+    }
+
+    private void notificarEvento(Evento evento) {
+        setChanged();
+        notifyObservers(evento);
     }
 }

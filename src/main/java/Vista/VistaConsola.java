@@ -1,6 +1,7 @@
 package Vista;
 
 import Controlador.ControladorUNO;
+import Controlador.VistaObserver;
 import Modelo.Carta;
 import Modelo.Color;
 import Modelo.Jugador;
@@ -10,13 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class VistaConsola {
+public class VistaConsola implements VistaObserver {
     private final ControladorUNO controlador;
     private final Scanner scanner;
 
     public VistaConsola(ControladorUNO controlador) {
         this.controlador = controlador;
         this.scanner = new Scanner(System.in);
+        this.controlador.registrarVista(this); // Registrar esta vista como observadora
     }
 
     public void iniciarJuego() {
@@ -33,7 +35,6 @@ public class VistaConsola {
         }
 
         while (controlador.isPartidaEnCurso()) {
-            mostrarEstadoPartida();
             manejarAccionJugador();
         }
 
@@ -65,7 +66,6 @@ public class VistaConsola {
         return nombresJugadores;
     }
 
-
     private void mostrarEstadoPartida() {
         Jugador jugadorActual = controlador.obtenerJugadorActual();
         Carta ultimaCartaJugadas = controlador.obtenerUltimaCartaJugadas();
@@ -79,9 +79,9 @@ public class VistaConsola {
         System.out.println("Color actual: " + colorActual);
     }
 
-
-
     private void manejarAccionJugador() {
+        //PROBAMOS SI ASI NO SE IMPRIME DOS VECES
+        //mostrarEstadoPartida();
         System.out.print("Seleccione una acción (1: Jugar carta, 2: Robar carta): ");
         try {
             int opcion = Integer.parseInt(scanner.nextLine());
@@ -141,6 +141,11 @@ public class VistaConsola {
             System.out.println("Entrada inválida. Eligiendo ROJO por defecto.");
             controlador.manejarCambioDeColor(Color.ROJO);
         }
+    }
+
+    @Override
+    public void actualizar() {
+        mostrarEstadoPartida();
     }
 
     public static void main(String[] args) {
