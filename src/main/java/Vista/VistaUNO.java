@@ -61,23 +61,25 @@ public class VistaUNO extends JFrame {
         jugarCartaBtn.addActionListener(new JugarCartaListener());
         robarCartaBtn.addActionListener(new RobarCartaListener());
         cambiarColorBtn.addActionListener(new CambiarColorListener());
-
-        actualizarEstado();
     }
 
     private void actualizarEstado() {
         // Mostrar el estado del juego
-        Jugador jugadorActual = controlador.obtenerJugadorActual();
-        Carta ultimaCarta = controlador.obtenerUltimaCartaJugadas();
-        Modelo.Color colorActual = controlador.obtenerColorActual();
+        try {
+            Jugador jugadorActual = controlador.obtenerJugadorActual();
+            Carta ultimaCarta = controlador.obtenerUltimaCartaJugadas();
+            Modelo.Color colorActual = controlador.obtenerColorActual();
 
-        StringBuilder estado = new StringBuilder();
-        estado.append("Turno de: ").append(jugadorActual.getNombre()).append("\n");
-        estado.append("Cartas del jugador actual: ").append(jugadorActual.getCartas()).append("\n");
-        estado.append("Última carta jugada: ").append(ultimaCarta).append("\n");
-        estado.append("Color actual: ").append(colorActual).append("\n");
+            StringBuilder estado = new StringBuilder();
+            estado.append("Turno de: ").append(jugadorActual.getNombre()).append("\n");
+            estado.append("Cartas del jugador actual: ").append(jugadorActual.getCartas()).append("\n");
+            estado.append("Última carta jugada: ").append(ultimaCarta).append("\n");
+            estado.append("Color actual: ").append(colorActual).append("\n");
 
-        estadoPartida.setText(estado.toString());
+            estadoPartida.setText(estado.toString());
+        } catch (Exception e) {
+            estadoPartida.setText("Error al actualizar el estado: " + e.getMessage());
+        }
     }
 
     private class JugarCartaListener implements ActionListener {
@@ -85,19 +87,11 @@ public class VistaUNO extends JFrame {
         public void actionPerformed(ActionEvent e) {
             try {
                 int indiceCarta = Integer.parseInt(indiceCartaInput.getText());
-                List<Carta> cartasJugador = controlador.obtenerJugadorActual().getCartas();
-                Carta cartaSeleccionada = cartasJugador.get(indiceCarta);
                 controlador.jugarCarta(indiceCarta);
-
-                if (cartaSeleccionada.getColor() == Modelo.Color.SIN_COLOR) {
-                    cambiarColor();
-                }
                 actualizarEstado();
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(VistaUNO.this, "Ingrese un índice válido.", "Error", JOptionPane.ERROR_MESSAGE);
-            } catch (IndexOutOfBoundsException ex) {
-                JOptionPane.showMessageDialog(VistaUNO.this, "Índice de carta inválido.", "Error", JOptionPane.ERROR_MESSAGE);
-            } catch (IllegalArgumentException ex) {
+            } catch (Exception ex) {
                 JOptionPane.showMessageDialog(VistaUNO.this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -118,17 +112,13 @@ public class VistaUNO extends JFrame {
     private class CambiarColorListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            cambiarColor();
-        }
-    }
-
-    private void cambiarColor() {
-        try {
-            Modelo.Color nuevoColor = (Modelo.Color) colorSelector.getSelectedItem();
-            controlador.manejarCambioDeColor(nuevoColor);
-            actualizarEstado();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(VistaUNO.this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            try {
+                Modelo.Color nuevoColor = (Modelo.Color) colorSelector.getSelectedItem();
+                controlador.manejarCambioDeColor(nuevoColor);
+                actualizarEstado();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(VistaUNO.this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -137,11 +127,15 @@ public class VistaUNO extends JFrame {
         ControladorUNO controlador = new ControladorUNO(partida);
         VistaUNO vista = new VistaUNO(controlador);
 
+        // Registrar la vista como observador del controlador
         controlador.registrarVista(vista::actualizarEstado);
 
         vista.setVisible(true);
 
         // Iniciar partida de prueba
         controlador.iniciarPartida(List.of("Jugador 1", "Jugador 2"));
+
+        // Actualizar estado una vez iniciada la partida
+        vista.actualizarEstado();
     }
 }
