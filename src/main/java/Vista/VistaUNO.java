@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 
 public class VistaUNO extends JFrame {
@@ -15,6 +16,8 @@ public class VistaUNO extends JFrame {
     private final JTextField indiceCartaInput;
     private final JComboBox<Modelo.Color> colorSelector;
     private final JButton jugarCartaBtn, robarCartaBtn, cambiarColorBtn;
+
+    private boolean esperandoCambioDeColor = false;
 
     public VistaUNO(ControladorUNO controlador) {
         this.controlador = controlador;
@@ -77,6 +80,11 @@ public class VistaUNO extends JFrame {
             estado.append("Color actual: ").append(colorActual).append("\n");
 
             estadoPartida.setText(estado.toString());
+
+            // Deshabilitar botones si estamos esperando un cambio de color
+            jugarCartaBtn.setEnabled(!esperandoCambioDeColor);
+            robarCartaBtn.setEnabled(!esperandoCambioDeColor);
+            cambiarColorBtn.setEnabled(esperandoCambioDeColor);
         } catch (Exception e) {
             estadoPartida.setText("Error al actualizar el estado: " + e.getMessage());
         }
@@ -88,6 +96,13 @@ public class VistaUNO extends JFrame {
             try {
                 int indiceCarta = Integer.parseInt(indiceCartaInput.getText());
                 controlador.jugarCarta(indiceCarta);
+
+                // Verificar si el color actual es SIN_COLOR para activar el cambio de color
+                if (controlador.obtenerColorActual() == Modelo.Color.SIN_COLOR) {
+                    esperandoCambioDeColor = true;
+                    JOptionPane.showMessageDialog(VistaUNO.this, "Has jugado una carta de cambio de color. Elige un nuevo color.", "Cambio de Color", JOptionPane.INFORMATION_MESSAGE);
+                }
+
                 actualizarEstado();
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(VistaUNO.this, "Ingrese un índice válido.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -96,6 +111,7 @@ public class VistaUNO extends JFrame {
             }
         }
     }
+
 
     private class RobarCartaListener implements ActionListener {
         @Override
@@ -115,6 +131,7 @@ public class VistaUNO extends JFrame {
             try {
                 Modelo.Color nuevoColor = (Modelo.Color) colorSelector.getSelectedItem();
                 controlador.manejarCambioDeColor(nuevoColor);
+                esperandoCambioDeColor = false;
                 actualizarEstado();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(VistaUNO.this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -123,6 +140,16 @@ public class VistaUNO extends JFrame {
     }
 
     public static void main(String[] args) {
+        // Configuración inicial de jugadores
+        int cantidadJugadores = Integer.parseInt(JOptionPane.showInputDialog("Ingrese la cantidad de jugadores:"));
+        List<String> nombresJugadores = new ArrayList<>();
+
+        for (int i = 1; i <= cantidadJugadores; i++) {
+            String nombre = JOptionPane.showInputDialog("Ingrese el nombre del Jugador " + i + ":");
+            nombresJugadores.add(nombre);
+        }
+
+        // Inicialización del controlador y la vista
         Partida partida = new Partida();
         ControladorUNO controlador = new ControladorUNO(partida);
         VistaUNO vista = new VistaUNO(controlador);
@@ -132,8 +159,8 @@ public class VistaUNO extends JFrame {
 
         vista.setVisible(true);
 
-        // Iniciar partida de prueba
-        controlador.iniciarPartida(List.of("Jugador 1", "Jugador 2"));
+        // Iniciar partida
+        controlador.iniciarPartida(nombresJugadores);
 
         // Actualizar estado una vez iniciada la partida
         vista.actualizarEstado();
