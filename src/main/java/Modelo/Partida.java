@@ -84,7 +84,7 @@ public class Partida extends Observable {
             colorActual = carta.getColor();
         }
 
-        pasarTurno();
+        //pasarTurno(); // Comentado para que no pase el turno
     }
 
     private boolean esCartaValida(Carta carta, Carta ultimaCarta) {

@@ -32,11 +32,29 @@ public class ControladorUNO {
     }
 
     // Maneja la acción de jugar una carta
+//    public void jugarCarta(int indiceCarta) {
+//        Jugador jugadorActual = partida.getJugadorActual();
+//        Carta carta = jugadorActual.getCartas().get(indiceCarta);
+//        partida.jugarCarta(carta);
+//        notificarVistas(); // Notificar que se jugó una carta
+//    }
+    // Maneja la acción de jugar una carta
     public void jugarCarta(int indiceCarta) {
         Jugador jugadorActual = partida.getJugadorActual();
         Carta carta = jugadorActual.getCartas().get(indiceCarta);
+
+        // Jugar la carta
         partida.jugarCarta(carta);
-        notificarVistas(); // Notificar que se jugó una carta
+
+        // Si la carta requiere cambio de color, no pases el turno aún
+        if (carta.getColor() == Color.SIN_COLOR) {
+            notificarVistas(); // Notificar que la carta fue jugada
+            return; // Esperar a que el jugador elija un color
+        }
+
+        // Si no requiere cambio de color, pasar el turno normalmente
+        partida.pasarTurno();
+        notificarVistas(); // Notificar que el turno cambió
     }
 
     // Pide al mazo una carta para el jugador actual
@@ -48,12 +66,23 @@ public class ControladorUNO {
     }
 
     // Maneja el cambio de color cuando se juega una carta especial
+//    public void manejarCambioDeColor(Color nuevoColor) {
+//        if (nuevoColor == Color.SIN_COLOR) {
+//            throw new IllegalArgumentException("El color no puede ser SIN_COLOR.");
+//        }
+//        partida.cambiarColorActual(nuevoColor);
+//        notificarVistas(); // Notificar que el color cambió
+//    }
+    // Maneja el cambio de color cuando se juega una carta especial
     public void manejarCambioDeColor(Color nuevoColor) {
         if (nuevoColor == Color.SIN_COLOR) {
             throw new IllegalArgumentException("El color no puede ser SIN_COLOR.");
         }
+
+        // Cambiar el color y pasar el turno
         partida.cambiarColorActual(nuevoColor);
-        notificarVistas(); // Notificar que el color cambió
+        partida.pasarTurno(); // Ahora sí cambia el turno
+        notificarVistas(); // Notificar que el color y el turno cambiaron
     }
 
     // Métodos para obtener el estado del juego en un formato neutral

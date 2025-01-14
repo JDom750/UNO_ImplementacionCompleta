@@ -117,7 +117,36 @@ public class VistaConsola implements VistaObserver {
         }
     }
 
-    private void cambiarColor() {
+//    private void cambiarColor() {
+//        System.out.println("Seleccione el nuevo color:");
+//        System.out.println("1: ROJO");
+//        System.out.println("2: AZUL");
+//        System.out.println("3: VERDE");
+//        System.out.println("4: AMARILLO");
+//
+//        try {
+//            int opcionColor = Integer.parseInt(scanner.nextLine());
+//            Color nuevoColor = switch (opcionColor) {
+//                case 1 -> Color.ROJO;
+//                case 2 -> Color.AZUL;
+//                case 3 -> Color.VERDE;
+//                case 4 -> Color.AMARILLO;
+//                default -> {
+//                    System.out.println("Opción inválida. Eligiendo ROJO por defecto.");
+//                    yield Color.ROJO;
+//                }
+//            };
+//            controlador.manejarCambioDeColor(nuevoColor);
+//        } catch (NumberFormatException e) {
+//            System.out.println("Entrada inválida. Eligiendo ROJO por defecto.");
+//            controlador.manejarCambioDeColor(Color.ROJO);
+//        }
+//    }
+private void cambiarColor() {
+    Color nuevoColor = null;
+
+    // Insistir hasta que se seleccione un color válido
+    while (nuevoColor == null) {
         System.out.println("Seleccione el nuevo color:");
         System.out.println("1: ROJO");
         System.out.println("2: AZUL");
@@ -126,22 +155,25 @@ public class VistaConsola implements VistaObserver {
 
         try {
             int opcionColor = Integer.parseInt(scanner.nextLine());
-            Color nuevoColor = switch (opcionColor) {
+            nuevoColor = switch (opcionColor) {
                 case 1 -> Color.ROJO;
                 case 2 -> Color.AZUL;
                 case 3 -> Color.VERDE;
                 case 4 -> Color.AMARILLO;
                 default -> {
-                    System.out.println("Opción inválida. Eligiendo ROJO por defecto.");
-                    yield Color.ROJO;
+                    System.out.println("Opción inválida. Por favor, seleccione un color válido.");
+                    yield null;
                 }
             };
-            controlador.manejarCambioDeColor(nuevoColor);
         } catch (NumberFormatException e) {
-            System.out.println("Entrada inválida. Eligiendo ROJO por defecto.");
-            controlador.manejarCambioDeColor(Color.ROJO);
+            System.out.println("Entrada inválida. Por favor, ingrese un número entre 1 y 4.");
         }
     }
+
+    // Llama al controlador con el color válido seleccionado
+    controlador.manejarCambioDeColor(nuevoColor);
+}
+
 
     @Override
     public void actualizar() {
