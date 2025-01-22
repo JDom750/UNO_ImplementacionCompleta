@@ -31,13 +31,7 @@ public class ControladorUNO {
         notificarVistas(); // Notificar que la partida fue iniciada
     }
 
-    // Maneja la acción de jugar una carta
-//    public void jugarCarta(int indiceCarta) {
-//        Jugador jugadorActual = partida.getJugadorActual();
-//        Carta carta = jugadorActual.getCartas().get(indiceCarta);
-//        partida.jugarCarta(carta);
-//        notificarVistas(); // Notificar que se jugó una carta
-//    }
+
     // Maneja la acción de jugar una carta
     public void jugarCarta(int indiceCarta) {
         Jugador jugadorActual = partida.getJugadorActual();
@@ -65,14 +59,6 @@ public class ControladorUNO {
         notificarVistas(); // Notificar que el turno cambió
     }
 
-    // Maneja el cambio de color cuando se juega una carta especial
-//    public void manejarCambioDeColor(Color nuevoColor) {
-//        if (nuevoColor == Color.SIN_COLOR) {
-//            throw new IllegalArgumentException("El color no puede ser SIN_COLOR.");
-//        }
-//        partida.cambiarColorActual(nuevoColor);
-//        notificarVistas(); // Notificar que el color cambió
-//    }
     // Maneja el cambio de color cuando se juega una carta especial
     public void manejarCambioDeColor(Color nuevoColor) {
         if (nuevoColor == Color.SIN_COLOR) {

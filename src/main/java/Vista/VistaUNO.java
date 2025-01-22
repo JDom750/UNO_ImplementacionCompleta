@@ -95,12 +95,15 @@ public class VistaUNO extends JFrame {
         public void actionPerformed(ActionEvent e) {
             try {
                 int indiceCarta = Integer.parseInt(indiceCartaInput.getText());
+                Carta cartaSeleccionada = controlador.obtenerJugadorActual().getCartas().get(indiceCarta);
                 controlador.jugarCarta(indiceCarta);
 
                 // Verificar si el color actual es SIN_COLOR para activar el cambio de color
-                if (controlador.obtenerColorActual() == Modelo.Color.SIN_COLOR) {
+                if (cartaSeleccionada.getColor() == Modelo.Color.SIN_COLOR) {
                     esperandoCambioDeColor = true;
                     JOptionPane.showMessageDialog(VistaUNO.this, "Has jugado una carta de cambio de color. Elige un nuevo color.", "Cambio de Color", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    esperandoCambioDeColor = false;
                 }
 
                 actualizarEstado();
@@ -111,7 +114,6 @@ public class VistaUNO extends JFrame {
             }
         }
     }
-
 
     private class RobarCartaListener implements ActionListener {
         @Override
