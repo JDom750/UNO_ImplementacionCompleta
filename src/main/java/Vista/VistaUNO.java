@@ -85,6 +85,11 @@ public class VistaUNO extends JFrame {
             jugarCartaBtn.setEnabled(!esperandoCambioDeColor);
             robarCartaBtn.setEnabled(!esperandoCambioDeColor);
             cambiarColorBtn.setEnabled(esperandoCambioDeColor);
+
+            // Verificar si la partida ha terminado
+            if (!controlador.isPartidaEnCurso()) {
+                JOptionPane.showMessageDialog(this, "¡La partida ha terminado!", "Fin de la Partida", JOptionPane.INFORMATION_MESSAGE);
+            }
         } catch (Exception e) {
             estadoPartida.setText("Error al actualizar el estado: " + e.getMessage());
         }
