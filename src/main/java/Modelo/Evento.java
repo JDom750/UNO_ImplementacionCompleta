@@ -1,6 +1,10 @@
 package Modelo;
 
-public class Evento {
+import java.io.Serializable;
+
+public class Evento implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final String tipo;
     private final Object datos;
 
@@ -9,11 +13,7 @@ public class Evento {
         this.datos = datos;
     }
 
-    public String getTipo() {
-        return tipo;
-    }
-
-    public Object getDatos() {
-        return datos;
-    }
+    public String getTipo() { return tipo; }
+    public Object getDatos() { return datos; }
 }
+

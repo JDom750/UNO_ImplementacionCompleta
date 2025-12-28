@@ -7,4 +7,6 @@ public    enum Numero{
     public static Numero getNumero(int i){
         return Numero.numeros[i];
     }
+
+    //overwrite el tostring
 }

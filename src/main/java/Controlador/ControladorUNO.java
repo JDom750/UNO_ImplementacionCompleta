@@ -1,91 +1,252 @@
 package Controlador;
 
 import Modelo.*;
+import Vista.VistaEsperaJavaFX;
+import ar.edu.unlu.rmimvc.cliente.IControladorRemoto;
+import ar.edu.unlu.rmimvc.observer.IObservableRemoto;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ControladorUNO {
-    private final Partida partida;
-    private final List<VistaObserver> vistas; // Lista de observadores (vistas)
+public class ControladorUNO implements IControladorRemoto {
 
-    public ControladorUNO(Partida partida) {
-        this.partida = partida;
-        this.vistas = new ArrayList<>();
-    }
+    private IPartidaRemota partida;                        // modelo remoto
+    //private final List<VistaObserver> vistas = new ArrayList<>(); // vistas locales
+    private final List<VistaObserver> vistas = new CopyOnWriteArrayList<>();  //thread safety
+    private String nombreLocal;
+    // Agregar este atributo:
+    private VistaEsperaJavaFX vistaEspera;
 
-    // Registra una vista como observador
+
+    // ============  MVC local (vistas) ============
+
     public void registrarVista(VistaObserver vista) {
-        vistas.add(vista);
+        this.vistas.add(vista);
     }
 
-    // Notifica a todas las vistas que hubo un cambio
     private void notificarVistas() {
-        for (VistaObserver vista : vistas) {
-            vista.actualizar(); // Cada vista implementará cómo se actualiza
+        for (VistaObserver v : vistas) {
+            v.actualizar();
         }
     }
 
-    // Inicia una nueva partida
-    public void iniciarPartida(List<String> nombresJugadores) {
-        partida.iniciarPartida(nombresJugadores);
-        notificarVistas(); // Notificar que la partida fue iniciada
+    // ============ IControladorRemoto (RMI) ============
+
+    @Override
+    public <T extends IObservableRemoto> void setModeloRemoto(T modeloRemoto) throws RemoteException {
+        this.partida = (IPartidaRemota) modeloRemoto; // cast seguro
     }
 
+//    @Override
+//    public void actualizar(IObservableRemoto observable, Object o) throws RemoteException {
+//        // Cada vez que el modelo remoto notifica, yo aviso a mis vistas locales
+//        notificarVistas();
+//    }
+@Override
+public void actualizar(IObservableRemoto observable, Object evento) throws RemoteException {
 
-    // Maneja la acción de jugar una carta
-    public void jugarCarta(int indiceCarta) {
-        Jugador jugadorActual = partida.getJugadorActual();
-        Carta carta = jugadorActual.getCartas().get(indiceCarta);
+    // Si el servidor manda un Evento
+    if (evento instanceof Evento e) {
 
-        // Jugar la carta
-        partida.jugarCarta(carta);
+        switch (e.getTipo()) {
 
-        // Si la carta requiere cambio de color, no pases el turno aún
-        if (carta.getColor() == Color.SIN_COLOR) {
-            notificarVistas(); // Notificar que la carta fue jugada
-            return; // Esperar a que el jugador elija un color
+            case "JUGADOR_REGISTRADO":
+                if (vistaEspera != null) {
+                    vistaEspera.agregarJugador((String) e.getDatos());
+                }
+                break;
+
+            case "INICIO_PARTIDA":  // ✔ nombre corregido
+                if (vistaEspera != null) {
+                    vistaEspera.cerrar();
+                    vistaEspera = null;
+                }
+                notificarVistas(); // Abrir vista principal
+                break;
+
+            default:
+                // eventos de juego normales: turno, color, carta jugada, etc.
+                notificarVistas();
+                break;
         }
-
-        // Si no requiere cambio de color, pasar el turno normalmente
-        partida.pasarTurno();
-        notificarVistas(); // Notificar que el turno cambió
     }
-
-    // Pide al mazo una carta para el jugador actual
-    public void robarCarta() {
-        Jugador jugadorActual = partida.getJugadorActual();
-        jugadorActual.tomarCarta(partida.robarCartaDelMazo());
-        partida.pasarTurno();
-        notificarVistas(); // Notificar que el turno cambió
-    }
-
-    // Maneja el cambio de color cuando se juega una carta especial
-    public void manejarCambioDeColor(Color nuevoColor) {
-        if (nuevoColor == Color.SIN_COLOR) {
-            throw new IllegalArgumentException("El color no puede ser SIN_COLOR.");
-        }
-
-        // Cambiar el color y pasar el turno
-        partida.cambiarColorActual(nuevoColor);
-        partida.pasarTurno(); // Ahora sí cambia el turno
-        notificarVistas(); // Notificar que el color y el turno cambiaron
-    }
-
-    // Métodos para obtener el estado del juego en un formato neutral
-    public Jugador obtenerJugadorActual() {
-        return partida.getJugadorActual();
-    }
-
-    public Carta obtenerUltimaCartaJugadas() {
-        return partida.getUltimaCartaJugadas();
-    }
-
-    public Color obtenerColorActual() {
-        return partida.getColorActual();
-    }
-
-    public boolean isPartidaEnCurso() {
-        return partida.isPartidaEnCurso();
+    else {
+        // fallback – no era un evento
+        notificarVistas();
     }
 }
 
+
+    // ============ API usada por las vistas ============
+
+
+    /** Inicia la partida con una lista de nombres de jugadores */
+    public void iniciarPartida(List<String> nombresJugadores) {
+        try {
+            partida.iniciarPartida(nombresJugadores);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** El jugador intenta jugar una carta */
+//    public void jugarCarta(int indiceCarta) {
+//        try {
+//            Jugador jugadorActual = partida.getJugadorActual();
+//            Carta carta = jugadorActual.getCartas().get(indiceCarta);
+//
+//            partida.jugarCarta(carta);
+//
+//            // Caso especial: modelo indica que debe elegirse un color (+4 o CambioColor)
+//            if (partida.isEstadoEsperandoColor()) {
+//                return; // la vista debe pedir color al jugador
+//            }
+//
+//            // La carta es normal o reversa :
+//            if (!partida.isEstadoEsperandoColor() && carta.getColor() != Color.SIN_COLOR) {
+//                partida.pasarTurno();
+//            }
+//
+//        } catch (RemoteException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
+    public void jugarCarta(int indiceCarta) {
+        try {
+            // Delegate entirely to server. Server will validate, aplicar efectos y pasar turno.
+            partida.jugarCarta(indiceCarta);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    /**
+     * Robar carta NO pasa turno automáticamente.
+     * La regla oficial permite jugar la carta robada si es válida.
+     * La vista decide si el jugador juega esa carta o pasa turno.
+     */
+    public void robarCarta() {
+        try {
+            partida.robarCartaDelMazo();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    /**
+     * Se llama solo cuando la vista eligió un color para +4 o CambioColor.
+     */
+    public void manejarCambioDeColor(Color nuevoColor) {
+        try {
+            if (nuevoColor == Color.SIN_COLOR) {
+                throw new IllegalArgumentException("El color no puede ser SIN_COLOR.");
+            }
+            partida.cambiarColorActual(nuevoColor);
+            //partida.pasarTurno();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** El jugador decide pasar turno (por ejemplo, después de robar) */
+    public void pasarTurno() {
+        try {
+            partida.pasarTurno();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void registrarJugador(String nombreJugador) {
+        try {
+            partida.registrarJugador(nombreJugador);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void setNombreLocal(String nombre) {
+        this.nombreLocal = nombre;
+    }
+
+    // Setter para registrar la vista:
+    public void setVistaEspera(VistaEsperaJavaFX vista) {
+        this.vistaEspera = vista;
+    }
+
+    public void solicitarInicioPartida() {
+        try {
+            partida.iniciarJuego();
+        } catch (RemoteException e) {
+            // Podrías mostrar un error si e.g. no hay suficientes jugadores
+            e.printStackTrace();
+        }
+    }
+
+
+    // ============ getters usados por la vista ============
+    public Jugador obtenerJugadorActual() {
+        try {
+            return partida.getJugadorActual();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Carta obtenerUltimaCartaJugadas() {
+        try {
+            return partida.getUltimaCartaJugadas();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Color obtenerColorActual() {
+        try {
+            return partida.getColorActual();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean isEstadoEsperandoColor() {
+        try {
+            return partida.isEstadoEsperandoColor();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean isPartidaEnCurso() {
+        try {
+            return partida.isPartidaEnCurso();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<Jugador> getJugadores() {
+        try {
+            return partida.getJugadores();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Jugador getJugadorLocal() {
+        try {
+            for (Jugador j : partida.getJugadores()) {
+                if (j.getNombre().equals(nombreLocal)) {
+                    return j;
+                }
+            }
+            return null;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+}

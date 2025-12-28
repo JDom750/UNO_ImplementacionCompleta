@@ -157,8 +157,8 @@ public class VistaUNO extends JFrame {
         }
 
         // Inicialización del controlador y la vista
-        Partida partida = new Partida();
-        ControladorUNO controlador = new ControladorUNO(partida);
+        //Partida partida = new Partida();
+        ControladorUNO controlador = new ControladorUNO();
         VistaUNO vista = new VistaUNO(controlador);
 
         // Registrar la vista como observador del controlador

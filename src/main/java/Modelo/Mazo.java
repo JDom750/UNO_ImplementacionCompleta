@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Stack;
+import java.util.Random;
 
 // Representa un mazo de cartas
 class Mazo {
@@ -16,7 +17,7 @@ class Mazo {
         inicializarMazo();
     }
 
-    private void inicializarMazo() {
+    private synchronized void inicializarMazo() {
         for (Color color : Color.values()) {
             if (color == Color.SIN_COLOR) continue; // Excluir el color especial para cartas Wild
 
@@ -39,46 +40,62 @@ class Mazo {
             mazo.add(new Carta(Color.SIN_COLOR, Numero.CAMBIOCOLOR));
             mazo.add(new Carta(Color.SIN_COLOR, Numero.MASCUATRO));
         }
+        barajar();
     }
 
-    public void barajar() {
+    public synchronized  void barajar() {
         Collections.shuffle(mazo);
     }
 
-    public Carta robarCarta() {
+    public synchronized Carta robarCarta() {
         if (mazo.isEmpty()) {
             reponerMazo();
         }
         return mazo.pop();
     }
 
-    public void descartar(Carta carta) {
+    public synchronized void descartar(Carta carta) {
         descartes.add(carta);
     }
 
-    private void reponerMazo() {
+    private synchronized void reponerMazo() {
         if (descartes.isEmpty()) {
             throw new IllegalStateException("No hay cartas en los descartes para reponer el mazo.");
         }
-        Carta ultimaCarta = descartes.remove(descartes.size() - 1); // Dejar la última carta en los descartes
+
+        // Mantener la última carta del descarte
+        Carta ultimaCarta = descartes.remove(descartes.size() - 1);
+
+        // Pasar todas las demás al mazo
         mazo.addAll(descartes);
+
+        // Limpiar descartes y dejar solo la última carta
         descartes.clear();
         descartes.add(ultimaCarta);
+
+        // Barajar solo el mazo
         barajar();
     }
 
-    public List<Carta> getDescartes() {
+    public synchronized List<Carta> getDescartes() {
         return Collections.unmodifiableList(descartes);
     }
 
-    public Carta getUltimaCartaJugadas() {
+    public synchronized Carta getUltimaCartaJugadas() {
         if (descartes.isEmpty()) {
             throw new IllegalStateException("No hay cartas en el descarte.");
         }
         return descartes.get(descartes.size() - 1);
     }
 
-    public boolean isEmpty() {
+    public synchronized boolean isEmpty() {
         return mazo.isEmpty();
     }
+
+    public synchronized void reiniciar() {
+        mazo.clear();
+        descartes.clear();
+        inicializarMazo();
+    }
+
 }

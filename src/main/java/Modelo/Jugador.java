@@ -1,11 +1,18 @@
 package Modelo;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-// Representa un jugador
-public class Jugador {
+/**
+ * Representa a un jugador en la partida de UNO.
+ * Contiene su nombre y las cartas que tiene en la mano.
+ * La lógica de validación de jugadas se maneja en la clase Partida.
+ */
+public class Jugador implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final String nombre;
     private final List<Carta> cartas;
 
@@ -14,35 +21,50 @@ public class Jugador {
         this.cartas = new ArrayList<>();
     }
 
-    public String getNombre() {
+    public synchronized String getNombre() {
         return nombre;
     }
 
-    public List<Carta> getCartas() {
+
+    /**
+     * Devuelve una copia inmodificable de la mano del jugador.
+     */
+    public synchronized List<Carta> getCartas() {
         return Collections.unmodifiableList(cartas);
     }
 
-    public void tomarCarta(Carta carta) {
+    /**
+     * Agrega una carta a la mano del jugador.
+     */
+    public synchronized void tomarCarta(Carta carta) {
         cartas.add(carta);
     }
 
-    public void jugarCarta(Carta carta) {
+    /**
+     * Elimina una carta de la mano del jugador.
+     * Lanza excepción si el jugador no tiene la carta.
+     */
+    public synchronized void jugarCarta(Carta carta) {
         if (!cartas.remove(carta)) {
-            throw new IllegalArgumentException("La carta no está en la mano del jugador");
+            throw new IllegalArgumentException("La carta no está en la mano del jugador: " + carta);
         }
     }
 
-    public boolean puedeJugar(Carta carta) {
-        return cartas.contains(carta);
+    /**
+     * Indica si al jugador aún le quedan cartas en la mano.
+     */
+    public synchronized boolean tieneCartas() {
+        return !cartas.isEmpty();
     }
 
-    public boolean tieneCartaDelColor(Color colorActual) {
-        for (Carta carta : cartas) {
-            if (carta.getColor() == colorActual) {
-                return true;
-            }
-        }
-        return false;
+    /**
+     * Devuelve el número de cartas que le quedan al jugador.
+     */
+    public synchronized int cantidadCartas() {
+        return cartas.size();
     }
 
+    public synchronized void vaciarMano() {
+        cartas.clear();
+    }
 }
